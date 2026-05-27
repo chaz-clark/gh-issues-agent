@@ -9,3 +9,6 @@ make-ai-agents/
 
 # Local agent context — not shared with the repo
 AGENTS.md
+
+# Local secrets / config — never committed
+.env
