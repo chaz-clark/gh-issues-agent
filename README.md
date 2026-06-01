@@ -16,35 +16,21 @@ Install the [GitHub CLI](https://cli.github.com/) and authenticate once:
 gh auth login
 ```
 
-This stores an OAuth token in your system keyring (no plaintext token on disk). Export it for the scripts:
+This stores an OAuth token in your system keyring (no plaintext token on disk). The toolkit calls `gh auth token` automatically — no `export` step and no `.env` file required.
+
+### Option B — explicit `GH_TOKEN` override
+
+If you'd rather use a [fine-grained PAT](https://github.com/settings/personal-access-tokens/new) (scoped to one or more repos with **Issues: Read and write**), export it before running the tools — it takes precedence over `gh auth token`:
 
 ```bash
-export GH_TOKEN=$(gh auth token)
+export GH_TOKEN=github_pat_xxxxxxxxxxxxxxxx
 ```
 
-Or add that line to your shell profile so it's always set.
-
-### Option B — Fine-grained Personal Access Token in `.env`
-
-Generate a [fine-grained token](https://github.com/settings/personal-access-tokens/new) scoped to the specific repo(s) you want to manage. Required permissions:
-
-- **Repository access**: only the repo(s) you'll triage
-- **Permissions** → **Issues**: Read and write
-- **Permissions** → **Metadata**: Read-only (auto-selected)
-
-Then:
-
-```bash
-echo 'GH_TOKEN=github_pat_xxxxxxxxxxxxxxxx' > .env
-```
-
-`.env` is gitignored — never commit a token.
-
-> **Avoid classic PATs** (`ghp_...`) for this. Classic tokens grant access to every repo you can read; a fine-grained token or `gh auth` flow is scoped and safer for a tool that runs on your behalf. If you must use a classic PAT, the minimum scope is `public_repo` for public repos or `repo` for private.
+> **Avoid classic PATs** (`ghp_...`). Classic tokens grant access to every repo you can read; a fine-grained token or `gh auth` is scoped and safer for a tool that runs on your behalf. If you must use a classic PAT, the minimum scope is `public_repo` for public repos or `repo` for private.
 
 ### Optional: pin the repo
 
-`gh_sync.py` and `gh_close.py` auto-detect the repo from the local `git remote`. To target a different repo from inside any directory, set:
+The tools auto-detect the repo from the local `git remote`. To target a different repo from inside any directory (the common case for `gh_create.py` filing bugs against a producer repo from a consumer's working tree), set:
 
 ```bash
 export GITHUB_REPO=owner/repo
@@ -114,7 +100,18 @@ uv run tools/gh_sync.py
 - Pulls all open issues + comments from GitHub
 - Writes `.github_issues/open/issue-NNNN-slug.md` for each
 - Moves files for issues no longer open → `closed/`
-- Auto-detects repo from git remote (or set `GITHUB_REPO=owner/repo` in `.env`)
+- Auto-detects repo from git remote (or set `GITHUB_REPO=owner/repo`)
+
+### gh_create.py
+```bash
+uv run tools/gh_create.py --title "..." --body "..." --label bug
+uv run tools/gh_create.py --title "..." --body-file draft.md --label bug --label triage
+GITHUB_REPO=owner/repo uv run tools/gh_create.py --title "..."   # cross-repo
+```
+- Creates a new issue on GitHub and drops its markdown mirror into `.github_issues/open/`
+- Validates `--label` values against the repo's label taxonomy (hard fail with "did you mean" suggestions on unknown)
+- `--body-file` takes precedence over `--body` if both are given
+- Use the `GITHUB_REPO` override to file bugs against a producer repo while working in a consumer's tree
 
 ### gh_close.py
 ```bash
@@ -158,6 +155,7 @@ gh_issues_agent/
     github_issues_reference.md       ← GitHub API patterns and field reference
   tools/
     gh_sync.py                       ← sync open issues → .github_issues/open/
+    gh_create.py                     ← create issue + drop file into open/
     gh_close.py                      ← close issue + move file to closed/
 
 .github_issues/                      ← gitignored, local only
@@ -170,10 +168,10 @@ gh_issues_agent/
 ## Troubleshooting
 
 **gh_sync.py returns 401**
-→ GH_TOKEN is missing, expired, or lacks `public_repo` scope. Regenerate.
+→ Token missing/expired/insufficient scope. Run `gh auth status` (or `gh auth login` again) to refresh the gh CLI token, or regenerate your PAT. The tools fall back to `gh auth token` automatically when `GH_TOKEN` is unset.
 
 **gh_sync.py returns 404**
-→ Repo not detected correctly. Set `GITHUB_REPO=owner/repo` in `.env` or as an exported env var.
+→ Repo not detected correctly. Set `GITHUB_REPO=owner/repo` as an exported env var.
 
 **Issue file missing after sync**
 → The issue was closed on GitHub directly. Check `.github_issues/closed/`.

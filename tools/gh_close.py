@@ -3,7 +3,6 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #   "requests>=2.31",
-#   "python-dotenv>=1.0",
 # ]
 # ///
 """
@@ -17,8 +16,8 @@ Usage:
     uv run tools/gh_close.py --issue 42 --comment "Fixed in commit abc123."
     ./tools/gh_close.py --issue 42 --comment "..."   # if marked executable
 
-Env vars required:
-    GH_TOKEN       GitHub personal access token (repo or public_repo scope)
+Auth:
+    GH_TOKEN env var (if set), else falls back to `gh auth token` (gh CLI).
 
 Env vars optional:
     GITHUB_REPO    owner/repo — auto-detected from git remote if not set
@@ -33,11 +32,23 @@ import sys
 from pathlib import Path
 
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
 
-GH_TOKEN = os.environ.get("GH_TOKEN", "")
+def _resolve_token():
+    token = os.environ.get("GH_TOKEN", "").strip()
+    if token:
+        return token
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "token"],
+            capture_output=True, text=True, timeout=10, check=True,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        return ""
+
+
+GH_TOKEN = _resolve_token()
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
 OPEN_DIR = Path(".github_issues/open")
@@ -113,12 +124,12 @@ def main():
     args = parser.parse_args()
 
     if not GH_TOKEN:
-        print("ERROR: GH_TOKEN not set in .env")
+        print("ERROR: no GitHub token. Set GH_TOKEN or run `gh auth login`.")
         sys.exit(1)
 
     repo = GITHUB_REPO or _detect_repo()
     if not repo:
-        print("ERROR: Could not detect repo. Set GITHUB_REPO=owner/repo in .env")
+        print("ERROR: Could not detect repo. Set GITHUB_REPO=owner/repo.")
         sys.exit(1)
 
     print(f"Closing #{args.issue} on {repo}...")
