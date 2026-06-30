@@ -5,7 +5,8 @@
 2. Parse `gh_issues_agent.json` for structured data: label taxonomy, API patterns, file format spec, and validation.
 3. Read `knowledge/agile_sprint.md` to understand the current sprint, what is in progress, and what is next. Always check sprint status before proposing work.
 4. Read `knowledge/gh_issues_agent_mission.md` for the full milestone rationale and issue triage philosophy.
-5. Do not parse this Markdown for structured data.
+5. Read `knowledge/handling_issues_with_prs.md` for the pattern to follow when an issue references an existing pull request.
+6. Do not parse this Markdown for structured data.
 
 ---
 
@@ -26,11 +27,12 @@ Manage GitHub issues for any repo as a local, file-based workflow. Pull issues d
 1. **Check the sprint**: Read `knowledge/agile_sprint.md` — find the active sprint, identify the next `[ ]` issue in order
 2. **Sync issues**: Run `gh_sync.py` to pull all open issues + comments into `.github_issues/open/`
 3. **Pick work**: Open the `.md` file for the next issue in the sprint plan, read the full description + comments
-4. **Fix it**: Make the code change — do not commit yet
-5. **Commit**: After verifying the fix locally — commit with a descriptive message referencing the issue (`Fixes #42`)
-6. **Close**: Run `gh_close.py --issue 42 --comment "Fixed in commit abc123."` — posts comment, closes on GitHub, moves file to `closed/`
-7. **Update the sprint**: Mark the issue `[x]` in `agile_sprint.md` with the commit hash
-8. **Re-sync**: Run `gh_sync.py` to confirm all sprint issues are in `closed/`
+4. **Check for PRs**: Scan issue for PR references; if found, run `gh pr view <number>` to read the PR and understand its approach (see `knowledge/handling_issues_with_prs.md`)
+5. **Fix it**: Make the code change with PR context in mind — do not commit yet
+6. **Commit**: After verifying the fix locally — commit with a descriptive message referencing the issue (`Fixes #42`) and PR if relevant (`Supersedes PR #120`)
+7. **Close**: Run `gh_close.py --issue 42 --comment "Fixed in commit abc123."` — posts comment, closes on GitHub, moves file to `closed/`
+8. **Update the sprint**: Mark the issue `[x]` in `agile_sprint.md` with the commit hash
+9. **Re-sync**: Run `gh_sync.py` to confirm all sprint issues are in `closed/`
 
 ---
 
