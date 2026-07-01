@@ -8,13 +8,13 @@
 """
 gh_close.py
 
-Post a comment and close a GitHub issue. Moves the local file from
+Post a comment and close a GitHub issue or PR. Moves the local file from
 .github_issues/open/ to .github_issues/closed/.
 
 Usage:
-    uv run tools/gh_close.py --issue 42
-    uv run tools/gh_close.py --issue 42 --comment "Fixed in commit abc123."
-    ./tools/gh_close.py --issue 42 --comment "..."   # if marked executable
+    uv run tools/gh_close.py --number 42 --comment "Fixed in commit abc123."
+    uv run tools/gh_close.py --number 42 --merge  # For PRs: merge instead of just close
+    ./tools/gh_close.py --number 42 --comment "..."   # if marked executable
 
 Auth:
     GH_TOKEN env var (if set), else falls back to `gh auth token` (gh CLI).
@@ -78,12 +78,17 @@ def _detect_repo():
     return None
 
 
-def close_issue(repo, number, comment=None):
-    base = f"{API_BASE}/repos/{repo}/issues/{number}"
+def close_issue_or_pr(repo, number, comment=None, merge=False):
+    # Determine if it's a PR or issue by checking local files
+    is_pr = False
+    for f in OPEN_DIR.glob(f"pr-{number:04d}-*.md"):
+        is_pr = True
+        break
 
+    # Post comment if provided (works for both issues and PRs)
     if comment:
         resp = requests.post(
-            f"{base}/comments",
+            f"{API_BASE}/repos/{repo}/issues/{number}/comments",
             headers=_headers(),
             json={"body": comment},
             timeout=30,
@@ -91,22 +96,59 @@ def close_issue(repo, number, comment=None):
         resp.raise_for_status()
         print(f"  Comment posted to #{number}")
 
-    resp = requests.patch(
-        base,
-        headers=_headers(),
-        json={"state": "closed"},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    print(f"  Issue #{number} closed on GitHub")
+    # Handle PR merge or close
+    if is_pr:
+        if merge:
+            # Attempt to merge the PR
+            resp = requests.put(
+                f"{API_BASE}/repos/{repo}/pulls/{number}/merge",
+                headers=_headers(),
+                json={"merge_method": "squash"},  # Can be: merge, squash, rebase
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                print(f"  PR #{number} merged on GitHub")
+            else:
+                print(f"  Warning: Could not merge PR #{number} (status {resp.status_code})")
+                print(f"  Falling back to close without merge")
+                resp = requests.patch(
+                    f"{API_BASE}/repos/{repo}/pulls/{number}",
+                    headers=_headers(),
+                    json={"state": "closed"},
+                    timeout=30,
+                )
+                resp.raise_for_status()
+                print(f"  PR #{number} closed on GitHub")
+        else:
+            # Just close the PR without merging
+            resp = requests.patch(
+                f"{API_BASE}/repos/{repo}/pulls/{number}",
+                headers=_headers(),
+                json={"state": "closed"},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            print(f"  PR #{number} closed on GitHub")
+    else:
+        # Close the issue
+        resp = requests.patch(
+            f"{API_BASE}/repos/{repo}/issues/{number}",
+            headers=_headers(),
+            json={"state": "closed"},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        print(f"  Issue #{number} closed on GitHub")
 
+    # Move local file to closed/
     CLOSED_DIR.mkdir(parents=True, exist_ok=True)
     moved = False
-    for f in sorted(OPEN_DIR.glob(f"issue-{number:04d}-*.md")):
-        dest = CLOSED_DIR / f.name
-        shutil.move(str(f), str(dest))
-        print(f"  Moved {f.name} -> closed/")
-        moved = True
+    for pattern in [f"issue-{number:04d}-*.md", f"pr-{number:04d}-*.md"]:
+        for f in sorted(OPEN_DIR.glob(pattern)):
+            dest = CLOSED_DIR / f.name
+            shutil.move(str(f), str(dest))
+            print(f"  Moved {f.name} -> closed/")
+            moved = True
 
     if not moved:
         print(f"  Note: no local file found for #{number} in open/ — run gh_sync.py to refresh")
@@ -114,12 +156,23 @@ def close_issue(repo, number, comment=None):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Close a GitHub issue and move its local file to closed/"
+        description="Close a GitHub issue or PR and move its local file to closed/"
     )
-    parser.add_argument("--issue", type=int, required=True, help="Issue number to close")
+    parser.add_argument(
+        "--number", type=int, required=True,
+        help="Issue or PR number to close"
+    )
+    parser.add_argument(
+        "--issue", type=int, dest="number",
+        help="(Deprecated: use --number) Issue number to close"
+    )
     parser.add_argument(
         "--comment", type=str, default=None,
         help="Comment to post before closing (include commit hash or PR reference)"
+    )
+    parser.add_argument(
+        "--merge", action="store_true",
+        help="For PRs: merge instead of just closing (uses squash merge)"
     )
     args = parser.parse_args()
 
@@ -132,8 +185,8 @@ def main():
         print("ERROR: Could not detect repo. Set GITHUB_REPO=owner/repo.")
         sys.exit(1)
 
-    print(f"Closing #{args.issue} on {repo}...")
-    close_issue(repo, args.issue, args.comment)
+    print(f"Closing #{args.number} on {repo}...")
+    close_issue_or_pr(repo, args.number, args.comment, args.merge)
     print("Done.")
 
 

@@ -1,138 +1,199 @@
-# GitHub Issues Agent — Mission & Strategy
+---
+name: gh-issues-agent-mission
+description: Mission, philosophy, and cross-repo usage pattern for gh-issues-agent — the canonical GitHub issues/PRs workflow toolkit
+version: "2.0"
+author: chaz-clark
+license: MIT
+metadata:
+  repo: gh-issues-agent
+  last-updated: 2026-06-30
+---
 
-This file captures the working mission, issue triage philosophy, and current milestone plan for the canvas_toolbox GitHub issues workflow. It evolves as the project matures.
+# gh-issues-agent — Mission & Strategy
+
+This file captures the mission, usage philosophy, and cross-repo integration pattern for the `gh-issues-agent` toolkit.
 
 ---
 
-## Canvas Toolbox Mission
+## Mission
 
-**Help normal teachers use agents to improve their courses** — expanding agent knowledge and skills, applying best practices in course architecture, and bringing proven student learning pedagogy into the tools.
+**Make GitHub issues and PRs manageable as local markdown files across any repo.**
 
-The toolbox is not a developer tool. It is an instructor tool. Every decision about what to build, fix, or prioritize should be filtered through: *does this make it easier for a teacher to run a better course?*
+This toolkit exists so that LLM agents (and humans) can:
+- Work with issues and PRs offline in their native environment (the editor)
+- Triage, comment, and close issues/PRs without leaving the terminal
+- Use the same workflow across multiple repos with zero per-repo setup
 
----
+**This is NOT**: a GitHub UI replacement, a project management system, or a PR review tool. It's a local sync layer for issues and PRs.
 
-## How Issues Relate to the Mission
-
-Three things have to be true before the mission pays off:
-
-1. **The mirror has to be trustworthy.** Agents can only act on course data they can read and write reliably. Bugs that make the local mirror lie to you block everything downstream.
-
-2. **Authoring has to be human-friendly.** Teachers won't edit Canvas HTML. If the content layer isn't approachable, agents can't help teachers write better course content.
-
-3. **Agent capabilities have to be grounded in pedagogy.** New agents should make courses better in measurable ways — clearer structure, better-paced dates, reduced cognitive load — not just add API coverage.
-
-This gives us a natural priority ordering: **fix the foundation → make it safe and ergonomic → add intelligence on top**.
+**Audience**: Solo developers and LLM agents working across multiple repos who want local control over GitHub workflows.
 
 ---
 
-## Value Streams (Milestone Framework)
+## Core Principles
 
-Issues are grouped into four themed milestones rather than traditional sprint velocity. This reflects the project's solo-maintainer reality and the mission-driven sequencing above.
+### 1. SSH Auth Only (via `gh` CLI)
 
-### Milestone 1 — Trust the Mirror 🔧
-*Fix bugs where the local mirror silently lies. Teachers won't use a tool they can't trust.*
+All three tools (`gh_sync.py`, `gh_create.py`, `gh_close.py`) authenticate via SSH using the GitHub CLI:
 
-Issues: #1, #2, #3, #5
-
-- #1 — False positive: homepage appears in orphaned_pages list (XS)
-- #3 — Classic quiz push missing title field (XS)
-- #5 — Classic quiz push missing points_possible (XS)
-- #2 — Assignment grading_type + submission_types not round-tripped; stale index on rename (S)
-
-Work order: #1, #3+#5 together, then #2.
-
-### Milestone 2 — Safe to Work In 🏗️
-*Establish safe zones for local-only artifacts. Expand mirror visibility.*
-
-Issues: #4, #6
-
-- #4 — course_ref/ pattern: protected folder for local-only artifacts not at risk from --pull (M)
-- #6 — New Quizzes pull support: Phase 1 read-only sidecar files (L)
-
-Do #4 before #6, #7, or #9 — it establishes the pattern that makes those features safe.
-
-### Milestone 3 — Author Like a Human ✍️
-*Lower the authoring barrier. Markdown is easier for teachers and better for agents.*
-
-Issues: #9, #7
-
-- #9 — Markdown authoring mirror (course_src/) — Phase 1: pages only (XL)
-- #7 — Canvas file upload for .docx templates — Phase 1: upload + store URL (M)
-
-The markdown mirror (#9) is strategic: agents reason over markdown far better than Canvas HTML. Everything the agents help teachers write gets easier once this layer exists.
-
-### Milestone 4 — Agents That Teach 🤖
-*New agent capabilities that directly improve course quality.*
-
-Issues: #8
-
-- #8 — Canvas Schedule Auditor Agent: reads setup notes, infers rules, audits dates, proposes corrections (L)
-
-This turns passive instructor documentation into an active rule system. High mission alignment — agents directly improving course architecture.
-
----
-
-## Recommended Sprint Order
-
-```
-Sprint 1 (bugs, fast):     #1 → #3 + #5 together → #2
-Sprint 2 (foundation):     #4 → #6
-Sprint 3 (authoring UX):   #9 Phase 1 → #7 Phase 1
-Sprint 4 (agents):         #8
+```bash
+gh auth login  # Run once per machine
 ```
 
+After that, all tools fall back to `gh auth token` automatically. No `.env` files, no manual PAT management, no expiring tokens to remember.
+
+An explicit `GH_TOKEN=...` env var still works if set, but SSH auth is the canonical pattern.
+
+### 2. Cross-Repo by Design
+
+Every tool supports `GITHUB_REPO=owner/repo` override:
+
+```bash
+# File a bug in another repo you work with
+GITHUB_REPO=chaz-clark/canvas-toolbox uv run tools/gh_create.py \
+  --title "Bug: missing field in API response" \
+  --body-file bug-report.md \
+  --label bug
+
+# Sync issues from a dependency you maintain
+GITHUB_REPO=chaz-clark/Make-AI-Agents uv run tools/gh_sync.py
+```
+
+This means an LLM agent working in one repo can discover a bug in a producer repo and file it directly — no context switching, no copy-paste to browser.
+
+### 3. Issues AND Pull Requests
+
+As of v2.0 (2026-06-30), the toolkit handles **both issues and PRs**:
+
+- `gh_sync.py` pulls issues and PRs into `.github_issues/open/` (files prefixed `issue-NNNN-` or `pr-NNNN-`)
+- `gh_close.py` can close or merge PRs (use `--merge` to squash-merge a PR)
+- PRs show branch info, draft status, mergeable state, and review comments in the local mirror
+
+**Why?** Public repos (like `canvas-toolbox`) now receive external contributions via PRs. Issues are bugs/enhancements from users; PRs are code contributions. Same workflow, same local mirror, different GitHub primitive.
+
+### 4. Audit-Trail Comments
+
+Never close an issue or PR silently. Always use `--comment`:
+
+```bash
+uv run tools/gh_close.py --number 42 --comment "Fixed in commit abc123."
+```
+
+The comment becomes the audit trail. Future maintainers (or future sessions) can trace why something was closed without reading the full commit diff.
+
 ---
 
-## Issue Sizing Reference
+## Workflow Pattern
 
-| Label | Effort | Examples |
+### Session Start: Sync
+
+```bash
+uv run tools/gh_sync.py
+```
+
+Pulls all open issues/PRs into `.github_issues/open/`. Moves closed ones to `closed/`. Run this at the start of every session — the local mirror lies as soon as someone touches GitHub directly.
+
+### Working: Read + Triage
+
+Open an issue file from `.github_issues/open/`, read the description + comments, decide whether to fix it.
+
+If it's a bug you can fix: read the full issue (including comments), fix it, commit with `Closes #N` in the message, then close explicitly:
+
+```bash
+uv run tools/gh_close.py --number N --comment "Fixed in commit $(git rev-parse HEAD)."
+```
+
+If it's a feature request for later: leave it in `open/`, add a comment via GitHub UI or a follow-up script, sync again.
+
+### Filing Bugs Cross-Repo
+
+When you discover a defect in another repo while working locally:
+
+```bash
+GITHUB_REPO=owner/repo uv run tools/gh_create.py \
+  --title "Bug: description" \
+  --body "Repro steps..." \
+  --label bug
+```
+
+The issue is created on GitHub, and the local mirror drops into that repo's `.github_issues/open/` (if you sync that repo).
+
+### Closing PRs
+
+For external contributions (PRs from others):
+
+```bash
+# Merge a PR after review
+uv run tools/gh_close.py --number 15 --merge --comment "LGTM, merging."
+
+# Close without merging (e.g., stale or duplicate)
+uv run tools/gh_close.py --number 16 --comment "Closing as duplicate of #14."
+```
+
+---
+
+## When to Use This vs. GitHub UI
+
+| Task | Use this toolkit | Use GitHub UI |
 |---|---|---|
-| XS | < 1 hour | Single-field fix in push path |
-| S | 2–4 hours | Multi-field round-trip + index fix |
-| M | half day | New folder pattern + docs + guard logic |
-| L | 1–2 days | New agent or major feature Phase 1 |
-| XL | 2–3 days | Architectural addition (e.g. markdown mirror) |
+| Read issues/PRs to decide what to work on | ✅ Toolkit (local `.md` files) | Either |
+| Comment + close after fixing | ✅ Toolkit (`gh_close.py --comment`) | Either |
+| File a bug in another repo | ✅ Toolkit (`GITHUB_REPO=...`) | GitHub UI |
+| Review PR code diffs | GitHub UI | GitHub UI |
+| Manage labels, milestones, assignees | GitHub UI | GitHub UI |
+| Merge a PR with review approval | ✅ Toolkit (`--merge`) | Either |
+
+**Rule of thumb:** if it's part of the daily issue triage + close loop, use the toolkit. If it's repo metadata management or complex PR review, use GitHub UI.
 
 ---
 
-## Principles for New Issues
+## Cross-Repo Integration (Canonical Use Case)
 
-When a new issue is filed, classify it against this framework before picking it up:
+**Problem:** You maintain multiple repos. Bugs discovered in repo A while working in repo B get lost in Slack threads or Notion drafts.
 
-1. **Is it a trust bug?** (mirror returns wrong data, push silently ignores fields, index goes stale) → Milestone 1 priority. Fix before anything else.
-2. **Does it create an unsafe workflow?** (local files at risk of deletion, no safe home for helper artifacts) → Milestone 2.
-3. **Does it reduce authoring friction for teachers?** → Milestone 3.
-4. **Does it add agent intelligence grounded in pedagogy?** → Milestone 4.
-5. **Is it API coverage for its own sake?** → Defer or label `wontfix` if it doesn't serve a teacher workflow.
+**Solution:** Every repo has access to this toolkit. When an agent working in `canvas-toolbox` discovers a defect in the underlying `gh-issues-agent` toolkit, it files the bug immediately:
+
+```bash
+GITHUB_REPO=chaz-clark/gh-issues-agent uv run tools/gh_create.py \
+  --title "gh_sync.py fails on repos with no issues" \
+  --body "Repro: ..." \
+  --label bug
+```
+
+The bug lands in `gh-issues-agent`'s issue tracker, not in a comment or a TODO file.
+
+**How repos consume this toolkit:**
+
+1. Clone or vendor `gh-issues-agent` into the consumer repo (gitignored, or as a subtree)
+2. Add `gh-issues-agent/tools/` to PATH or call via `uv run`
+3. Set `GITHUB_REPO` when filing cross-repo bugs
+4. Sync the consumer's own issues with bare `uv run tools/gh_sync.py` (auto-detects from git remote)
+
+No per-repo setup beyond the initial clone. Same three scripts, same workflow, every repo.
 
 ---
 
-## Token Efficiency — Let Python Do the Heavy Lifting
+## What This Toolkit Is NOT For
 
-Agents are expensive per token. Python scripts are fast and cheap. The right division:
-
-- **Agent:** reads knowledge files, identifies what to do, edits tool code, reviews results
-- **Python scripts:** execute all bulk API work (paginate responses, write files, build indexes)
-
-**Never have an agent loop over API responses itself** when a Python script can do it in one `uv run`. If you find yourself writing agent logic that iterates over Canvas items, fetch the data once with a script and hand the agent the structured output.
-
-This is already the pattern in canvas_sync.py, blueprint_sync.py, and gh_sync.py. New features should follow the same model: add a Python tool, let the agent orchestrate it.
-
----
-
-## What This Agent Is Not For
-
-- Tracking PRs (issues only)
-- Replacing Canvas UI for things the API can't do
-- Building features for developers — the audience is instructors
+- **PR code review** — use GitHub UI for diffs, inline comments, review approval
+- **Issue triage at scale** (50+ issues/day) — this is for solo maintainers, not enterprise triage teams
+- **Replacing `gh` CLI for everything** — this is a focused subset (issues, PRs, comments, close/merge), not a full GitHub wrapper
 
 ---
 
 ## Living Document Notes
 
 Update this file when:
-- A milestone is completed and lessons were learned
-- A new value stream emerges that doesn't fit the current four
-- The mission expands (e.g. multi-institution support, LMS-agnostic tooling)
-- A new agent is added that changes how issues should be triaged
+- A new tool is added to the toolkit (e.g., `gh_label.py`, `gh_assign.py`)
+- The auth pattern changes (unlikely, but possible if GitHub deprecates PATs)
+- Cross-repo usage expands to support GitHub Enterprise or non-GitHub forges
+- The mission changes (e.g., multi-maintainer workflows, issue template automation)
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---|---|---|
+| 1.0 | 2026-04-29 | Initial extraction from `canvas_toolbox` — issues only, `gh_sync.py` + `gh_close.py` |
+| 2.0 | 2026-06-30 | Added PR support (`gh_sync.py` pulls PRs, `gh_close.py --merge`), shipped `gh_create.py`, dropped `.env` in favor of `gh auth token` fallback |

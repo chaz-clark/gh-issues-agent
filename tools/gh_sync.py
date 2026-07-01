@@ -111,7 +111,7 @@ def _format_date(iso):
         return iso
 
 
-def _render_issue(issue, comments):
+def _render_issue(issue, comments, pr_data=None):
     number = issue["number"]
     title = issue["title"]
     state = issue["state"]
@@ -121,10 +121,12 @@ def _render_issue(issue, comments):
     author = issue.get("user", {}).get("login", "unknown")
     url = issue.get("html_url", "")
     body = (issue.get("body") or "").strip()
+    is_pr = "pull_request" in issue
 
     lines = [
         "---",
-        f"issue: {number}",
+        f"number: {number}",
+        f"type: {'pull_request' if is_pr else 'issue'}",
         f'title: "{title}"',
         f"state: {state}",
         f"labels: [{', '.join(labels)}]",
@@ -132,6 +134,16 @@ def _render_issue(issue, comments):
         f"updated: {updated}",
         f"author: {author}",
         f"url: {url}",
+    ]
+
+    if is_pr and pr_data:
+        lines.append(f"head: {pr_data.get('head', {}).get('ref', 'unknown')}")
+        lines.append(f"base: {pr_data.get('base', {}).get('ref', 'unknown')}")
+        lines.append(f"draft: {pr_data.get('draft', False)}")
+        lines.append(f"mergeable: {pr_data.get('mergeable', 'unknown')}")
+        lines.append(f"merged: {pr_data.get('merged', False)}")
+
+    lines.extend([
         "---",
         "",
         f"# #{number} — {title}",
@@ -139,7 +151,7 @@ def _render_issue(issue, comments):
         "## Description",
         "",
         body if body else "_No description provided._",
-    ]
+    ])
 
     if comments:
         lines += ["", "---", "", "## Comments", ""]
@@ -157,51 +169,68 @@ def _render_issue(issue, comments):
     return "\n".join(lines) + "\n"
 
 
-def _issue_filename(number, title):
-    return f"issue-{number:04d}-{_slugify(title)}.md"
+def _issue_filename(number, title, is_pr=False):
+    prefix = "pr" if is_pr else "issue"
+    return f"{prefix}-{number:04d}-{_slugify(title)}.md"
 
 
 def sync(repo):
     OPEN_DIR.mkdir(parents=True, exist_ok=True)
     CLOSED_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"Syncing issues from {repo}...")
+    print(f"Syncing issues and PRs from {repo}...")
 
-    issues = _get_all_pages(f"{API_BASE}/repos/{repo}/issues", {"state": "open"})
-    issues = [i for i in issues if "pull_request" not in i]
-    print(f"  {len(issues)} open issue(s) found\n")
+    items = _get_all_pages(f"{API_BASE}/repos/{repo}/issues", {"state": "open"})
+
+    issue_count = sum(1 for i in items if "pull_request" not in i)
+    pr_count = sum(1 for i in items if "pull_request" in i)
+    print(f"  {issue_count} open issue(s), {pr_count} open PR(s) found\n")
 
     current_numbers = set()
 
-    for issue in issues:
-        number = issue["number"]
-        title = issue["title"]
+    for item in items:
+        number = item["number"]
+        title = item["title"]
+        is_pr = "pull_request" in item
         current_numbers.add(number)
 
+        # Fetch full PR data if this is a PR
+        pr_data = None
+        if is_pr:
+            resp = requests.get(
+                f"{API_BASE}/repos/{repo}/pulls/{number}",
+                headers=_headers(),
+                timeout=30
+            )
+            if resp.status_code == 200:
+                pr_data = resp.json()
+
         comments = []
-        if issue.get("comments", 0) > 0:
+        if item.get("comments", 0) > 0:
             comments = _get_all_pages(
                 f"{API_BASE}/repos/{repo}/issues/{number}/comments"
             )
 
-        filename = _issue_filename(number, title)
-        content = _render_issue(issue, comments)
+        filename = _issue_filename(number, title, is_pr)
+        content = _render_issue(item, comments, pr_data)
         (OPEN_DIR / filename).write_text(content, encoding="utf-8")
 
-        label_str = ", ".join(lb["name"] for lb in issue.get("labels", []))
+        label_str = ", ".join(lb["name"] for lb in item.get("labels", []))
         label_str = f" [{label_str}]" if label_str else ""
-        print(f"  #{number}{label_str} {title}")
+        item_type = "PR" if is_pr else "issue"
+        print(f"  #{number} ({item_type}){label_str} {title}")
 
-    # Move files for issues no longer open → closed/
+    # Move files for issues/PRs no longer open → closed/
     moved = 0
-    for f in sorted(OPEN_DIR.glob("issue-*.md")):
-        m = re.match(r"issue-(\d+)-", f.name)
-        if m and int(m.group(1)) not in current_numbers:
-            shutil.move(str(f), str(CLOSED_DIR / f.name))
-            moved += 1
-            print(f"  -> moved {f.name} to closed/")
+    for pattern in ["issue-*.md", "pr-*.md"]:
+        for f in sorted(OPEN_DIR.glob(pattern)):
+            m = re.match(r"(?:issue|pr)-(\d+)-", f.name)
+            if m and int(m.group(1)) not in current_numbers:
+                shutil.move(str(f), str(CLOSED_DIR / f.name))
+                moved += 1
+                print(f"  -> moved {f.name} to closed/")
 
-    print(f"\nDone: {len(issues)} open, {moved} moved to closed/")
+    print(f"\nDone: {issue_count} issue(s), {pr_count} PR(s) open; {moved} moved to closed/")
 
 
 def main():
