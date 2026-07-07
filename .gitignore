@@ -10,9 +10,6 @@ Make-AI-Agents/
 # Local clone of handoff — pulled fresh, never tracked
 handoff/
 
-# Local agent context — not shared with the repo
-AGENTS.md
-
 # Local secrets / config — never committed
 .env
 
