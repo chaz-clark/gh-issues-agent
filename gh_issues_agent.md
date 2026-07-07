@@ -21,6 +21,7 @@ knowledge_files:
   - knowledge/agile_sprint.md
   - knowledge/gh_issues_agent_mission.md
   - knowledge/github_issues_reference.md
+  - knowledge/handling_issues_with_prs.md
 ---
 
 # GitHub Issues Agent Guide
@@ -44,7 +45,8 @@ Manage GitHub issues and pull requests for any repo as a local, file-based workf
 1. Read this file for mission, workflow, label taxonomy, and pitfalls.
 2. Read `knowledge/agile_sprint.md` to understand the current sprint, what is in progress, and what is next. Always check sprint status before proposing work.
 3. Read `knowledge/gh_issues_agent_mission.md` for the full milestone rationale and issue triage philosophy.
-4. See `knowledge/github_issues_reference.md` for GitHub API field reference.
+4. Read `knowledge/handling_issues_with_prs.md` for the pattern to follow when an issue references an existing pull request (from a contributor or prior attempt).
+5. See `knowledge/github_issues_reference.md` for GitHub API field reference.
 
 ---
 
@@ -53,11 +55,12 @@ Manage GitHub issues and pull requests for any repo as a local, file-based workf
 1. **Check the sprint**: Read `knowledge/agile_sprint.md` — find the active sprint, identify the next `[ ]` issue in order
 2. **Sync issues**: Run `uv run tools/gh_sync.py` to pull all open issues + PRs + comments into `.github_issues/open/`
 3. **Pick work**: Open the `.md` file for the next issue/PR in the sprint plan, read the full description + comments
-4. **Fix it**: Make the code change — do not commit yet
-5. **Commit**: After verifying the fix locally — commit with a descriptive message referencing the issue (`Fixes #42` or `Closes #42`)
-6. **Close/Merge**: Run `uv run tools/gh_close.py --number 42 --comment "Fixed in commit abc123."` (add `--merge` for PRs you want to squash-merge)
-7. **Update the sprint**: Mark the issue `[x]` in `knowledge/agile_sprint.md` with the commit hash
-8. **Re-sync**: Run `uv run tools/gh_sync.py` to confirm all sprint issues are in `closed/`
+4. **Check for PR references**: If working on an issue that mentions an existing PR, use `gh pr view <number>` to review it first (see `knowledge/handling_issues_with_prs.md`)
+5. **Fix it**: Make the code change — do not commit yet
+6. **Commit**: After verifying the fix locally — commit with a descriptive message referencing the issue (`Fixes #42` or `Closes #42`) and PR if relevant (`Supersedes PR #120`)
+7. **Close/Merge**: Run `uv run tools/gh_close.py --number 42 --comment "Fixed in commit abc123."` (add `--merge` for PRs you want to squash-merge)
+8. **Update the sprint**: Mark the issue `[x]` in `knowledge/agile_sprint.md` with the commit hash
+9. **Re-sync**: Run `uv run tools/gh_sync.py` to confirm all sprint issues are in `closed/`
 
 ---
 
