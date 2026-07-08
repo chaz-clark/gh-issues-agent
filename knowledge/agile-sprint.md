@@ -31,8 +31,8 @@ Tracks active and completed work for the `gh-issues-agent` toolkit. Each sprint 
 
 | # | Issue | Size | Status | Commit |
 |---|---|---|---|---|
-| — | Extract `gh-sync.py` from canvas_toolbox | M | `[x]` | Initial extraction |
-| — | Extract `gh-close.py` from canvas_toolbox | M | `[x]` | Initial extraction |
+| — | Extract `gh_sync.py` from canvas_toolbox | M | `[x]` | Initial extraction |
+| — | Extract `gh_close.py` from canvas_toolbox | M | `[x]` | Initial extraction |
 | — | Establish `.github-issues/` local mirror pattern | S | `[x]` | Initial extraction |
 | — | Add AGENTS.md v1.0 | S | `[x]` | — |
 
@@ -51,11 +51,11 @@ Tracks active and completed work for the `gh-issues-agent` toolkit. Each sprint 
 
 | # | Issue | Size | Status | Commit |
 |---|---|---|---|---|
-| #2 | Add `gh-create.py` tool for creating issues | M | `[x]` | 17bc679 |
+| #2 | Add `gh_create.py` tool for creating issues | M | `[x]` | 17bc679 |
 | — | Drop `python-dotenv` dependency (use `gh auth token` fallback) | XS | `[x]` | 17bc679 |
 
 **Definition of done:**
-- `gh-create.py --title "..." --body "..." --label bug` works
+- `gh_create.py --title "..." --body "..." --label bug` works
 - Cross-repo creation via `GITHUB_REPO=owner/repo` works
 - Label validation against repo taxonomy
 - All three tools use `gh auth token` fallback (SSH auth canonical)
@@ -70,15 +70,15 @@ Tracks active and completed work for the `gh-issues-agent` toolkit. Each sprint 
 
 | # | Issue | Size | Status | Commit |
 |---|---|---|---|---|
-| — | Update `gh-sync.py` to pull PRs (remove filter, add PR metadata rendering) | M | `[x]` | This session |
-| — | Update `gh-close.py` to close/merge PRs (`--merge` flag for squash-merge) | M | `[x]` | This session |
+| — | Update `gh_sync.py` to pull PRs (remove filter, add PR metadata rendering) | M | `[x]` | This session |
+| — | Update `gh_close.py` to close/merge PRs (`--merge` flag for squash-merge) | M | `[x]` | This session |
 | — | Distinguish PR files (`pr-NNNN-*.md`) from issue files (`issue-NNNN-*.md`) | XS | `[x]` | This session |
 | — | Render PR-specific metadata (head/base branch, draft, mergeable, merged status) | S | `[x]` | This session |
 | — | Update knowledge files to reflect v2.0 mission (drop stale Canvas content) | M | `[x]` | This session |
 
 **Definition of done:**
-- `gh-sync.py` pulls both issues and PRs
-- `gh-close.py --number N --merge` merges PRs
+- `gh_sync.py` pulls both issues and PRs
+- `gh_close.py --number N --merge` merges PRs
 - PR files show branch, draft status, mergeable state in frontmatter
 - AGENTS.md updated to document PR support
 - Mission file reflects cross-repo issues/PRs toolkit purpose
@@ -90,7 +90,7 @@ Tracks active and completed work for the `gh-issues-agent` toolkit. Each sprint 
 Ideas for future sprints, not yet scheduled:
 
 ### Potential Sprint 4 — Enhanced PR Workflow
-- Add `--merge-method` flag to `gh-close.py` (support merge, squash, rebase)
+- Add `--merge-method` flag to `gh_close.py` (support merge, squash, rebase)
 - Fetch PR review comments and approval status in sync
 - Add `--draft` flag to create draft PRs (if we add PR creation tool)
 
@@ -111,7 +111,7 @@ Ideas for future sprints, not yet scheduled:
 When closing an issue or completing work:
 1. Mark its row `[x]` and fill in the commit hash
 2. When all items in a sprint are `[x]`, mark the sprint Status as **Complete** and move it to the completed section above Future Work
-3. Run `gh-sync.py` to confirm all sprint issues are in `.github-issues/closed/` (if tracked on GitHub)
+3. Run `gh_sync.py` to confirm all sprint issues are in `.github-issues/closed/` (if tracked on GitHub)
 4. Note any scope changes or lessons learned in the sprint's notes
 
 ---
@@ -120,8 +120,8 @@ When closing an issue or completing work:
 
 | Sprint | Completion Date | Shipped |
 |---|---|---|
-| Sprint 1 — Core Toolkit | 2026-04-29 | `gh-sync.py`, `gh-close.py`, AGENTS.md v1.0 |
-| Sprint 2 — Issue Creation | 2026-06-01 | `gh-create.py`, SSH auth fallback, issue #2 closed |
+| Sprint 1 — Core Toolkit | 2026-04-29 | `gh_sync.py`, `gh_close.py`, AGENTS.md v1.0 |
+| Sprint 2 — Issue Creation | 2026-06-01 | `gh_create.py`, SSH auth fallback, issue #2 closed |
 | Sprint 3 — PR Support (v2.0) | 2026-06-30 | PR sync, PR close/merge, updated knowledge files |
 
 ---

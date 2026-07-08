@@ -6,14 +6,14 @@
 # ]
 # ///
 """
-gh-create.py
+gh_create.py
 
 Create a GitHub issue and drop its markdown mirror into .github-issues/open/.
 
 Usage:
-    uv run tools/gh-create.py --title "..." --body "..." --label bug
-    uv run tools/gh-create.py --title "..." --body-file draft.md --label bug --label triage
-    GITHUB_REPO=owner/repo uv run tools/gh-create.py --title "..."   # cross-repo
+    uv run tools/gh_create.py --title "..." --body "..." --label bug
+    uv run tools/gh_create.py --title "..." --body-file draft.md --label bug --label triage
+    GITHUB_REPO=owner/repo uv run tools/gh_create.py --title "..."   # cross-repo
 
 Auth:
     GH_TOKEN env var (if set), else falls back to `gh auth token` (gh CLI).

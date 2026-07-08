@@ -34,7 +34,7 @@ This toolkit exists so that LLM agents (and humans) can:
 
 ### 1. SSH Auth Only (via `gh` CLI)
 
-All three tools (`gh-sync.py`, `gh-create.py`, `gh-close.py`) authenticate via SSH using the GitHub CLI:
+All three tools (`gh_sync.py`, `gh_create.py`, `gh_close.py`) authenticate via SSH using the GitHub CLI:
 
 ```bash
 gh auth login  # Run once per machine
@@ -50,13 +50,13 @@ Every tool supports `GITHUB_REPO=owner/repo` override:
 
 ```bash
 # File a bug in another repo you work with
-GITHUB_REPO=chaz-clark/canvas-toolbox uv run tools/gh-create.py \
+GITHUB_REPO=chaz-clark/canvas-toolbox uv run tools/gh_create.py \
   --title "Bug: missing field in API response" \
   --body-file bug-report.md \
   --label bug
 
 # Sync issues from a dependency you maintain
-GITHUB_REPO=chaz-clark/Make-AI-Agents uv run tools/gh-sync.py
+GITHUB_REPO=chaz-clark/Make-AI-Agents uv run tools/gh_sync.py
 ```
 
 This means an LLM agent working in one repo can discover a bug in a producer repo and file it directly — no context switching, no copy-paste to browser.
@@ -65,8 +65,8 @@ This means an LLM agent working in one repo can discover a bug in a producer rep
 
 As of v2.0 (2026-06-30), the toolkit handles **both issues and PRs**:
 
-- `gh-sync.py` pulls issues and PRs into `.github-issues/open/` (files prefixed `issue-NNNN-` or `pr-NNNN-`)
-- `gh-close.py` can close or merge PRs (use `--merge` to squash-merge a PR)
+- `gh_sync.py` pulls issues and PRs into `.github-issues/open/` (files prefixed `issue-NNNN-` or `pr-NNNN-`)
+- `gh_close.py` can close or merge PRs (use `--merge` to squash-merge a PR)
 - PRs show branch info, draft status, mergeable state, and review comments in the local mirror
 
 **Why?** Public repos (like `canvas-toolbox`) now receive external contributions via PRs. Issues are bugs/enhancements from users; PRs are code contributions. Same workflow, same local mirror, different GitHub primitive.
@@ -76,7 +76,7 @@ As of v2.0 (2026-06-30), the toolkit handles **both issues and PRs**:
 Never close an issue or PR silently. Always use `--comment`:
 
 ```bash
-uv run tools/gh-close.py --number 42 --comment "Fixed in commit abc123."
+uv run tools/gh_close.py --number 42 --comment "Fixed in commit abc123."
 ```
 
 The comment becomes the audit trail. Future maintainers (or future sessions) can trace why something was closed without reading the full commit diff.
@@ -88,7 +88,7 @@ The comment becomes the audit trail. Future maintainers (or future sessions) can
 ### Session Start: Sync
 
 ```bash
-uv run tools/gh-sync.py
+uv run tools/gh_sync.py
 ```
 
 Pulls all open issues/PRs into `.github-issues/open/`. Moves closed ones to `closed/`. Run this at the start of every session — the local mirror lies as soon as someone touches GitHub directly.
@@ -100,7 +100,7 @@ Open an issue file from `.github-issues/open/`, read the description + comments,
 If it's a bug you can fix: read the full issue (including comments), fix it, commit with `Closes #N` in the message, then close explicitly:
 
 ```bash
-uv run tools/gh-close.py --number N --comment "Fixed in commit $(git rev-parse HEAD)."
+uv run tools/gh_close.py --number N --comment "Fixed in commit $(git rev-parse HEAD)."
 ```
 
 If it's a feature request for later: leave it in `open/`, add a comment via GitHub UI or a follow-up script, sync again.
@@ -110,7 +110,7 @@ If it's a feature request for later: leave it in `open/`, add a comment via GitH
 When you discover a defect in another repo while working locally:
 
 ```bash
-GITHUB_REPO=owner/repo uv run tools/gh-create.py \
+GITHUB_REPO=owner/repo uv run tools/gh_create.py \
   --title "Bug: description" \
   --body "Repro steps..." \
   --label bug
@@ -124,10 +124,10 @@ For external contributions (PRs from others):
 
 ```bash
 # Merge a PR after review
-uv run tools/gh-close.py --number 15 --merge --comment "LGTM, merging."
+uv run tools/gh_close.py --number 15 --merge --comment "LGTM, merging."
 
 # Close without merging (e.g., stale or duplicate)
-uv run tools/gh-close.py --number 16 --comment "Closing as duplicate of #14."
+uv run tools/gh_close.py --number 16 --comment "Closing as duplicate of #14."
 ```
 
 ---
@@ -137,7 +137,7 @@ uv run tools/gh-close.py --number 16 --comment "Closing as duplicate of #14."
 | Task | Use this toolkit | Use GitHub UI |
 |---|---|---|
 | Read issues/PRs to decide what to work on | ✅ Toolkit (local `.md` files) | Either |
-| Comment + close after fixing | ✅ Toolkit (`gh-close.py --comment`) | Either |
+| Comment + close after fixing | ✅ Toolkit (`gh_close.py --comment`) | Either |
 | File a bug in another repo | ✅ Toolkit (`GITHUB_REPO=...`) | GitHub UI |
 | Review PR code diffs | GitHub UI | GitHub UI |
 | Manage labels, milestones, assignees | GitHub UI | GitHub UI |
@@ -154,8 +154,8 @@ uv run tools/gh-close.py --number 16 --comment "Closing as duplicate of #14."
 **Solution:** Every repo has access to this toolkit. When an agent working in `canvas-toolbox` discovers a defect in the underlying `gh-issues-agent` toolkit, it files the bug immediately:
 
 ```bash
-GITHUB_REPO=chaz-clark/gh-issues-agent uv run tools/gh-create.py \
-  --title "gh-sync.py fails on repos with no issues" \
+GITHUB_REPO=chaz-clark/gh-issues-agent uv run tools/gh_create.py \
+  --title "gh_sync.py fails on repos with no issues" \
   --body "Repro: ..." \
   --label bug
 ```
@@ -167,7 +167,7 @@ The bug lands in `gh-issues-agent`'s issue tracker, not in a comment or a TODO f
 1. Clone or vendor `gh-issues-agent` into the consumer repo (gitignored, or as a subtree)
 2. Add `gh-issues-agent/tools/` to PATH or call via `uv run`
 3. Set `GITHUB_REPO` when filing cross-repo bugs
-4. Sync the consumer's own issues with bare `uv run tools/gh-sync.py` (auto-detects from git remote)
+4. Sync the consumer's own issues with bare `uv run tools/gh_sync.py` (auto-detects from git remote)
 
 No per-repo setup beyond the initial clone. Same three scripts, same workflow, every repo.
 
@@ -195,5 +195,5 @@ Update this file when:
 
 | Version | Date | Changes |
 |---|---|---|
-| 1.0 | 2026-04-29 | Initial extraction from `canvas_toolbox` — issues only, `gh-sync.py` + `gh-close.py` |
-| 2.0 | 2026-06-30 | Added PR support (`gh-sync.py` pulls PRs, `gh-close.py --merge`), shipped `gh-create.py`, dropped `.env` in favor of `gh auth token` fallback |
+| 1.0 | 2026-04-29 | Initial extraction from `canvas_toolbox` — issues only, `gh_sync.py` + `gh_close.py` |
+| 2.0 | 2026-06-30 | Added PR support (`gh_sync.py` pulls PRs, `gh_close.py --merge`), shipped `gh_create.py`, dropped `.env` in favor of `gh auth token` fallback |

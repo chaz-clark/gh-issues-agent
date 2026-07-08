@@ -30,7 +30,7 @@ export GH_TOKEN=github_pat_xxxxxxxxxxxxxxxx
 
 ### Optional: pin the repo
 
-The tools auto-detect the repo from the local `git remote`. To target a different repo from inside any directory (the common case for `gh-create.py` filing bugs against a producer repo from a consumer's working tree), set:
+The tools auto-detect the repo from the local `git remote`. To target a different repo from inside any directory (the common case for `gh_create.py` filing bugs against a producer repo from a consumer's working tree), set:
 
 ```bash
 export GITHUB_REPO=owner/repo
@@ -42,7 +42,7 @@ export GITHUB_REPO=owner/repo
 
 ### 1. Sync issues at the start of each session
 ```bash
-uv run tools/gh-sync.py
+uv run tools/gh_sync.py
 ```
 Pulls all open issues + comments into `.github-issues/open/` as markdown files. Issues closed since your last sync are moved to `.github-issues/closed/` automatically.
 
@@ -66,13 +66,13 @@ Open `knowledge/agile-sprint.md` and mark the issue `[x]` with the commit hash. 
 
 ### 5. Close the issue explicitly (with context)
 ```bash
-uv run tools/gh-close.py --issue 1 --comment "Fixed in commit abc123. Added homepage filter to cmd_init() orphan list."
+uv run tools/gh_close.py --issue 1 --comment "Fixed in commit abc123. Added homepage filter to cmd_init() orphan list."
 ```
 This posts the comment to GitHub, closes the issue, and moves the local file from `open/` to `closed/`.
 
 ### 6. Re-sync to confirm and pick the next issue
 ```bash
-uv run tools/gh-sync.py
+uv run tools/gh_sync.py
 ```
 
 ---
@@ -93,30 +93,30 @@ For triage across all open issues:
 
 ## Tool Reference
 
-### gh-sync.py
+### gh_sync.py
 ```bash
-uv run tools/gh-sync.py
+uv run tools/gh_sync.py
 ```
 - Pulls all open issues + comments from GitHub
 - Writes `.github-issues/open/issue-NNNN-slug.md` for each
 - Moves files for issues no longer open → `closed/`
 - Auto-detects repo from git remote (or set `GITHUB_REPO=owner/repo`)
 
-### gh-create.py
+### gh_create.py
 ```bash
-uv run tools/gh-create.py --title "..." --body "..." --label bug
-uv run tools/gh-create.py --title "..." --body-file draft.md --label bug --label triage
-GITHUB_REPO=owner/repo uv run tools/gh-create.py --title "..."   # cross-repo
+uv run tools/gh_create.py --title "..." --body "..." --label bug
+uv run tools/gh_create.py --title "..." --body-file draft.md --label bug --label triage
+GITHUB_REPO=owner/repo uv run tools/gh_create.py --title "..."   # cross-repo
 ```
 - Creates a new issue on GitHub and drops its markdown mirror into `.github-issues/open/`
 - Validates `--label` values against the repo's label taxonomy (hard fail with "did you mean" suggestions on unknown)
 - `--body-file` takes precedence over `--body` if both are given
 - Use the `GITHUB_REPO` override to file bugs against a producer repo while working in a consumer's tree
 
-### gh-close.py
+### gh_close.py
 ```bash
-uv run tools/gh-close.py --issue N
-uv run tools/gh-close.py --issue N --comment "Fixed in commit abc123."
+uv run tools/gh_close.py --issue N
+uv run tools/gh_close.py --issue N --comment "Fixed in commit abc123."
 ```
 - Posts comment to issue (if `--comment` provided)
 - Closes issue on GitHub
@@ -154,9 +154,9 @@ gh_issues_agent/
     gh-issues-agent-mission.md              ← living mission doc + milestone rationale
     github-issues-reference.md       ← GitHub API patterns and field reference
   tools/
-    gh-sync.py                       ← sync open issues → .github-issues/open/
-    gh-create.py                     ← create issue + drop file into open/
-    gh-close.py                      ← close issue + move file to closed/
+    gh_sync.py                       ← sync open issues → .github-issues/open/
+    gh_create.py                     ← create issue + drop file into open/
+    gh_close.py                      ← close issue + move file to closed/
 
 .github-issues/                      ← gitignored, local only
   open/                              ← one .md file per open issue
@@ -167,17 +167,17 @@ gh_issues_agent/
 
 ## Troubleshooting
 
-**gh-sync.py returns 401**
+**gh_sync.py returns 401**
 → Token missing/expired/insufficient scope. Run `gh auth status` (or `gh auth login` again) to refresh the gh CLI token, or regenerate your PAT. The tools fall back to `gh auth token` automatically when `GH_TOKEN` is unset.
 
-**gh-sync.py returns 404**
+**gh_sync.py returns 404**
 → Repo not detected correctly. Set `GITHUB_REPO=owner/repo` as an exported env var.
 
 **Issue file missing after sync**
 → The issue was closed on GitHub directly. Check `.github-issues/closed/`.
 
-**gh-close.py returns 403**
+**gh_close.py returns 403**
 → Token doesn't have write access to issues. Needs `public_repo` scope minimum.
 
 **PR files appearing in open/**
-→ GitHub's issues endpoint returns PRs too. `gh-sync.py` filters them by checking for the `pull_request` key — if PRs are slipping through, the API response structure may have changed.
+→ GitHub's issues endpoint returns PRs too. `gh_sync.py` filters them by checking for the `pull_request` key — if PRs are slipping through, the API response structure may have changed.
