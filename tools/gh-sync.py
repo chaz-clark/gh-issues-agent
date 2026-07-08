@@ -6,14 +6,14 @@
 # ]
 # ///
 """
-gh_sync.py
+gh-sync.py
 
-Pull all open GitHub issues + comments into .github_issues/open/ as markdown files.
-Moves files for issues no longer open to .github_issues/closed/.
+Pull all open GitHub issues + comments into .github-issues/open/ as markdown files.
+Moves files for issues no longer open to .github-issues/closed/.
 
 Usage:
-    uv run tools/gh_sync.py
-    ./tools/gh_sync.py        # if marked executable
+    uv run tools/gh-sync.py
+    ./tools/gh-sync.py        # if marked executable
 
 Auth:
     GH_TOKEN env var (if set), else falls back to `gh auth token` (gh CLI).
@@ -50,8 +50,8 @@ def _resolve_token():
 GH_TOKEN = _resolve_token()
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
-OPEN_DIR = Path(".github_issues/open")
-CLOSED_DIR = Path(".github_issues/closed")
+OPEN_DIR = Path(".github-issues/open")
+CLOSED_DIR = Path(".github-issues/closed")
 
 API_BASE = "https://api.github.com"
 

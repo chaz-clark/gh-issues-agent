@@ -19,7 +19,7 @@ Before starting work on any issue, scan the issue body and comments for PR refer
 
 ```bash
 # Example: Check issue #123 for PR references
-grep -i "pr #\|pull request\|github.com.*pull" .github_issues/open/issue-0123-*.md
+grep -i "pr #\|pull request\|github.com.*pull" .github-issues/open/issue-0123-*.md
 ```
 
 ### 2. Review the PR if Found
@@ -82,15 +82,15 @@ gh pr view 120 --json files,state,body
 
 Update the standard sprint workflow (from `gh_issues_agent.md`):
 
-1. **Check the sprint**: Read `knowledge/agile_sprint.md` — find the next `[ ]` issue
-2. **Sync issues**: Run `gh_sync.py`
+1. **Check the sprint**: Read `knowledge/agile-sprint.md` — find the next `[ ]` issue
+2. **Sync issues**: Run `gh-sync.py`
 3. **Pick work**: Open the `.md` file for the issue
 4. **Check for PRs**: ⭐ NEW STEP ⭐ Scan issue for PR references; if found, `gh pr view <number>`
 5. **Learn from PR**: ⭐ NEW STEP ⭐ Read PR files, approach, and state; decide whether to build on it, learn from it, or supersede it
 6. **Fix it**: Make the code change with PR context in mind
 7. **Commit**: Reference both the issue and the PR if relevant (`Fixes #123`, `Supersedes PR #120`)
-8. **Close issue**: Run `gh_close.py --issue <number>` with commit reference
-9. **Update sprint**: Mark `[x]` in `agile_sprint.md`
+8. **Close issue**: Run `gh-close.py --issue <number>` with commit reference
+9. **Update sprint**: Mark `[x]` in `agile-sprint.md`
 
 ## Comment Patterns
 

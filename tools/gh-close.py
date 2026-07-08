@@ -6,15 +6,15 @@
 # ]
 # ///
 """
-gh_close.py
+gh-close.py
 
 Post a comment and close a GitHub issue or PR. Moves the local file from
-.github_issues/open/ to .github_issues/closed/.
+.github-issues/open/ to .github-issues/closed/.
 
 Usage:
-    uv run tools/gh_close.py --number 42 --comment "Fixed in commit abc123."
-    uv run tools/gh_close.py --number 42 --merge  # For PRs: merge instead of just close
-    ./tools/gh_close.py --number 42 --comment "..."   # if marked executable
+    uv run tools/gh-close.py --number 42 --comment "Fixed in commit abc123."
+    uv run tools/gh-close.py --number 42 --merge  # For PRs: merge instead of just close
+    ./tools/gh-close.py --number 42 --comment "..."   # if marked executable
 
 Auth:
     GH_TOKEN env var (if set), else falls back to `gh auth token` (gh CLI).
@@ -51,8 +51,8 @@ def _resolve_token():
 GH_TOKEN = _resolve_token()
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "")
 
-OPEN_DIR = Path(".github_issues/open")
-CLOSED_DIR = Path(".github_issues/closed")
+OPEN_DIR = Path(".github-issues/open")
+CLOSED_DIR = Path(".github-issues/closed")
 
 API_BASE = "https://api.github.com"
 

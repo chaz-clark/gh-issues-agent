@@ -1,6 +1,6 @@
 # GitHub Issues Agent — How to Use
 
-A small Python toolkit that manages GitHub issues for any repo as a local, file-based workflow. No browser required — issues live in `.github_issues/` as readable markdown files with full comment history. Auto-detects the target repo from the directory's git remote.
+A small Python toolkit that manages GitHub issues for any repo as a local, file-based workflow. No browser required — issues live in `.github-issues/` as readable markdown files with full comment history. Auto-detects the target repo from the directory's git remote.
 
 ---
 
@@ -30,7 +30,7 @@ export GH_TOKEN=github_pat_xxxxxxxxxxxxxxxx
 
 ### Optional: pin the repo
 
-The tools auto-detect the repo from the local `git remote`. To target a different repo from inside any directory (the common case for `gh_create.py` filing bugs against a producer repo from a consumer's working tree), set:
+The tools auto-detect the repo from the local `git remote`. To target a different repo from inside any directory (the common case for `gh-create.py` filing bugs against a producer repo from a consumer's working tree), set:
 
 ```bash
 export GITHUB_REPO=owner/repo
@@ -42,15 +42,15 @@ export GITHUB_REPO=owner/repo
 
 ### 1. Sync issues at the start of each session
 ```bash
-uv run tools/gh_sync.py
+uv run tools/gh-sync.py
 ```
-Pulls all open issues + comments into `.github_issues/open/` as markdown files. Issues closed since your last sync are moved to `.github_issues/closed/` automatically.
+Pulls all open issues + comments into `.github-issues/open/` as markdown files. Issues closed since your last sync are moved to `.github-issues/closed/` automatically.
 
 ### 2. Pick what to work on
 ```bash
-ls .github_issues/open/
+ls .github-issues/open/
 ```
-Open `knowledge/agile_sprint.md` — find the active sprint and work the next `[ ]` issue in order. Read the full issue file (description + comments) before writing any code.
+Open `knowledge/agile-sprint.md` — find the active sprint and work the next `[ ]` issue in order. Read the full issue file (description + comments) before writing any code.
 
 ### 3. Fix it and commit
 Reference the issue number in your commit message:
@@ -62,17 +62,17 @@ Closes #1"
 GitHub will auto-close the issue when this is pushed if you use `Closes #N`, `Fixes #N`, or `Resolves #N` in the commit message or PR body.
 
 ### 4. Update the sprint
-Open `knowledge/agile_sprint.md` and mark the issue `[x]` with the commit hash. If all issues in the sprint are `[x]`, mark the sprint Complete and move it to the Completed Sprints section.
+Open `knowledge/agile-sprint.md` and mark the issue `[x]` with the commit hash. If all issues in the sprint are `[x]`, mark the sprint Complete and move it to the Completed Sprints section.
 
 ### 5. Close the issue explicitly (with context)
 ```bash
-uv run tools/gh_close.py --issue 1 --comment "Fixed in commit abc123. Added homepage filter to cmd_init() orphan list."
+uv run tools/gh-close.py --issue 1 --comment "Fixed in commit abc123. Added homepage filter to cmd_init() orphan list."
 ```
 This posts the comment to GitHub, closes the issue, and moves the local file from `open/` to `closed/`.
 
 ### 6. Re-sync to confirm and pick the next issue
 ```bash
-uv run tools/gh_sync.py
+uv run tools/gh-sync.py
 ```
 
 ---
@@ -81,42 +81,42 @@ uv run tools/gh_sync.py
 
 Load the agent context before asking Claude to help with an issue:
 
-1. Open the issue file: `.github_issues/open/issue-NNNN-slug.md`
+1. Open the issue file: `.github-issues/open/issue-NNNN-slug.md`
 2. Tell Claude: *"Read gh_issues_agent.md and gh_issues_agent.json, then help me work through issue #N."*
 3. Claude will have the triage framework, label taxonomy, and close templates from the JSON — it knows what a good close comment looks like.
 
 For triage across all open issues:
 
-> *"Read knowledge/gh_issues_agent_mission.md and all files in .github_issues/open/, then propose the next issue to work on and why."*
+> *"Read knowledge/gh-issues-agent-mission.md and all files in .github-issues/open/, then propose the next issue to work on and why."*
 
 ---
 
 ## Tool Reference
 
-### gh_sync.py
+### gh-sync.py
 ```bash
-uv run tools/gh_sync.py
+uv run tools/gh-sync.py
 ```
 - Pulls all open issues + comments from GitHub
-- Writes `.github_issues/open/issue-NNNN-slug.md` for each
+- Writes `.github-issues/open/issue-NNNN-slug.md` for each
 - Moves files for issues no longer open → `closed/`
 - Auto-detects repo from git remote (or set `GITHUB_REPO=owner/repo`)
 
-### gh_create.py
+### gh-create.py
 ```bash
-uv run tools/gh_create.py --title "..." --body "..." --label bug
-uv run tools/gh_create.py --title "..." --body-file draft.md --label bug --label triage
-GITHUB_REPO=owner/repo uv run tools/gh_create.py --title "..."   # cross-repo
+uv run tools/gh-create.py --title "..." --body "..." --label bug
+uv run tools/gh-create.py --title "..." --body-file draft.md --label bug --label triage
+GITHUB_REPO=owner/repo uv run tools/gh-create.py --title "..."   # cross-repo
 ```
-- Creates a new issue on GitHub and drops its markdown mirror into `.github_issues/open/`
+- Creates a new issue on GitHub and drops its markdown mirror into `.github-issues/open/`
 - Validates `--label` values against the repo's label taxonomy (hard fail with "did you mean" suggestions on unknown)
 - `--body-file` takes precedence over `--body` if both are given
 - Use the `GITHUB_REPO` override to file bugs against a producer repo while working in a consumer's tree
 
-### gh_close.py
+### gh-close.py
 ```bash
-uv run tools/gh_close.py --issue N
-uv run tools/gh_close.py --issue N --comment "Fixed in commit abc123."
+uv run tools/gh-close.py --issue N
+uv run tools/gh-close.py --issue N --comment "Fixed in commit abc123."
 ```
 - Posts comment to issue (if `--comment` provided)
 - Closes issue on GitHub
@@ -128,7 +128,7 @@ Always include `--comment` with a commit hash or description — it's the audit 
 
 ## Issue Triage Reference
 
-See `knowledge/gh_issues_agent_mission.md` for the full milestone plan. Quick version:
+See `knowledge/gh-issues-agent-mission.md` for the full milestone plan. Quick version:
 
 | Priority | Label / Type | Action |
 |---|---|---|
@@ -150,15 +150,15 @@ gh_issues_agent/
   gh_issues_agent.md                        ← agent guide (mission, principles, pitfalls)
   gh_issues_agent.json                      ← structured data (label taxonomy, API patterns)
   knowledge/
-    agile_sprint.md                  ← active sprint plan, updated as issues close
-    gh_issues_agent_mission.md              ← living mission doc + milestone rationale
-    github_issues_reference.md       ← GitHub API patterns and field reference
+    agile-sprint.md                  ← active sprint plan, updated as issues close
+    gh-issues-agent-mission.md              ← living mission doc + milestone rationale
+    github-issues-reference.md       ← GitHub API patterns and field reference
   tools/
-    gh_sync.py                       ← sync open issues → .github_issues/open/
-    gh_create.py                     ← create issue + drop file into open/
-    gh_close.py                      ← close issue + move file to closed/
+    gh-sync.py                       ← sync open issues → .github-issues/open/
+    gh-create.py                     ← create issue + drop file into open/
+    gh-close.py                      ← close issue + move file to closed/
 
-.github_issues/                      ← gitignored, local only
+.github-issues/                      ← gitignored, local only
   open/                              ← one .md file per open issue
   closed/                            ← archived after resolution
 ```
@@ -167,17 +167,17 @@ gh_issues_agent/
 
 ## Troubleshooting
 
-**gh_sync.py returns 401**
+**gh-sync.py returns 401**
 → Token missing/expired/insufficient scope. Run `gh auth status` (or `gh auth login` again) to refresh the gh CLI token, or regenerate your PAT. The tools fall back to `gh auth token` automatically when `GH_TOKEN` is unset.
 
-**gh_sync.py returns 404**
+**gh-sync.py returns 404**
 → Repo not detected correctly. Set `GITHUB_REPO=owner/repo` as an exported env var.
 
 **Issue file missing after sync**
-→ The issue was closed on GitHub directly. Check `.github_issues/closed/`.
+→ The issue was closed on GitHub directly. Check `.github-issues/closed/`.
 
-**gh_close.py returns 403**
+**gh-close.py returns 403**
 → Token doesn't have write access to issues. Needs `public_repo` scope minimum.
 
 **PR files appearing in open/**
-→ GitHub's issues endpoint returns PRs too. `gh_sync.py` filters them by checking for the `pull_request` key — if PRs are slipping through, the API response structure may have changed.
+→ GitHub's issues endpoint returns PRs too. `gh-sync.py` filters them by checking for the `pull_request` key — if PRs are slipping through, the API response structure may have changed.

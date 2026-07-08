@@ -16,7 +16,7 @@ Local, file-based GitHub issues and PRs workflow — sync, triage, close, and me
 
 ## Project Purpose
 
-**This is**: A small Python toolkit for managing GitHub issues and pull requests as local markdown files. Pulls open issues and PRs into `.github_issues/open/`, lets you read/triage them offline, and closes (or merges) them back to GitHub with an audit-trail comment. Originally extracted from `canvas_toolbox`.
+**This is**: A small Python toolkit for managing GitHub issues and pull requests as local markdown files. Pulls open issues and PRs into `.github-issues/open/`, lets you read/triage them offline, and closes (or merges) them back to GitHub with an audit-trail comment. Originally extracted from `canvas_toolbox`.
 
 **This is NOT**: A GitHub UI replacement, a project-management system, a multi-repo orchestrator, or a CI/CD tool. No browser automation, no webhook server.
 
@@ -29,18 +29,18 @@ gh_issues_agent/
 ├── README.md                  # Daily workflow + tool reference
 ├── gh_issues_agent.md         # Agent spec with YAML frontmatter (mission, workflow, label taxonomy)
 ├── knowledge/
-│   ├── agile_sprint.md        # Active sprint plan
-│   ├── gh_issues_agent_mission.md   # Mission + milestones
-│   └── github_issues_reference.md   # GitHub API field reference
+│   ├── agile-sprint.md        # Active sprint plan
+│   ├── gh-issues-agent-mission.md   # Mission + milestones
+│   └── github-issues-reference.md   # GitHub API field reference
 ├── tools/
-│   ├── gh_sync.py             # Pull open issues + PRs → .github_issues/open/
-│   ├── gh_create.py           # Create issue + drop file into open/
-│   └── gh_close.py            # Comment + close/merge + move file to closed/
+│   ├── gh-sync.py             # Pull open issues + PRs → .github-issues/open/
+│   ├── gh-create.py           # Create issue + drop file into open/
+│   └── gh-close.py            # Comment + close/merge + move file to closed/
 └── Make-AI-Agents/            # Local clone, gitignored — see Active Context
     └── knowledge/
         └── behavioral_discipline.md   # Discipline source of truth
 
-.github_issues/                # gitignored — local issue mirror
+.github-issues/                # gitignored — local issue mirror
 ├── open/
 └── closed/
 ```
@@ -54,11 +54,11 @@ In short, every contributor — human or LLM — operates under these principles
 For the full principles and override rules, see `Make-AI-Agents/knowledge/behavioral_discipline.md` → "The Ten Principles". The four no-override principles (P-001 Read Before Claiming, P-003 Stop on Defect, P-007 Pull Don't Push, P-010 Respect Intent) apply unconditionally.
 
 **Project-specific rules**:
-- `.github_issues/` is gitignored — never commit issue mirrors.
-- Always pass `--comment` to `gh_close.py` (it's the audit trail).
+- `.github-issues/` is gitignored — never commit issue mirrors.
+- Always pass `--comment` to `gh-close.py` (it's the audit trail).
 - Reference issue numbers in commits (`Closes #N` / `Fixes #N`) so GitHub auto-closes correctly.
 - Read the full issue file (description + comments) before touching code that addresses it.
-- Re-run `gh_sync.py` at the start of each session — local mirror lies as soon as someone touches GitHub directly.
+- Re-run `gh-sync.py` at the start of each session — local mirror lies as soon as someone touches GitHub directly.
 
 ## Handoff document recognition
 
@@ -123,12 +123,12 @@ Session insight → durable knowledge.
 _Last updated: 2026-07-07_
 
 - **JSON → YAML frontmatter migration complete 2026-07-07** — Migrated `gh_issues_agent.json` to YAML frontmatter in `gh_issues_agent.md` following Anthropic Agent Skills / agentskills.io industry standard (aligned with Make-AI-Agents v2.0 pattern). All structured data (label taxonomy, workflow steps, API endpoints, validation checklists) now lives in the markdown file with YAML metadata. JSON file deleted. Zero breaking changes — all data preserved, just better organized.
-- **v2.0 PR support shipped 2026-06-30** — `gh_sync.py` now pulls both issues and PRs (no longer filters PRs out). `gh_close.py` can close or squash-merge PRs via `--merge` flag. PR files (`pr-NNNN-*.md`) show head/base branch, draft status, mergeable state. Knowledge files (`gh_issues_agent_mission.md`, `agile_sprint.md`) rewritten to reflect actual mission (cross-repo issues/PRs toolkit, not Canvas content). AGENTS.md bumped to v4.0.
-- `tools/gh_create.py` shipped 2026-06-01 (commit `17bc679`) closing issue #2 — toolkit is now full CRUD (sync/create/close). Same commit dropped the `python-dotenv` dependency: all three tools fall back to `gh auth token` when `GH_TOKEN` isn't set.
+- **v2.0 PR support shipped 2026-06-30** — `gh-sync.py` now pulls both issues and PRs (no longer filters PRs out). `gh-close.py` can close or squash-merge PRs via `--merge` flag. PR files (`pr-NNNN-*.md`) show head/base branch, draft status, mergeable state. Knowledge files (`gh-issues-agent-mission.md`, `agile-sprint.md`) rewritten to reflect actual mission (cross-repo issues/PRs toolkit, not Canvas content). AGENTS.md bumped to v4.0.
+- `tools/gh-create.py` shipped 2026-06-01 (commit `17bc679`) closing issue #2 — toolkit is now full CRUD (sync/create/close). Same commit dropped the `python-dotenv` dependency: all three tools fall back to `gh auth token` when `GH_TOKEN` isn't set.
 - `Make-AI-Agents` is a **local clone, gitignored** at [Make-AI-Agents/](Make-AI-Agents/) (not a subtree, not a submodule — see [.gitignore](.gitignore)). Refresh with `cd Make-AI-Agents && git pull`. Re-clone fresh by removing the folder and running `git clone https://github.com/chaz-clark/Make-AI-Agents.git Make-AI-Agents` from the repo root. This avoids subtree squash-merge ceremony and keeps Make-AI-Agents content out of this repo's tracked history.
 - `handoff/` is a sibling gitignored clone of the [chaz-clark/handoff](https://github.com/chaz-clark/handoff) convention spec. `handoffs/` (plural, also gitignored) holds the canonical audit-trail copies of incoming `deliver`-direction handoffs; applied ones live under `handoffs/archive/`.
 - Hermes-sprints v3.7 upgrade applied 2026-06-01 from Make-AI-Agents `81ebc9a` (Sprint A: this frontmatter; Sprint B: Learning loop section + `knowledge/learned/`; Sprint F: Handoff document recognition section). See `handoffs/archive/2026-05-28_agents-md-hermes-sprints-upgrade.md`.
-- Cross-repo usage: any consumer repo can file bugs against a producer with `GITHUB_REPO=owner/repo uv run tools/gh_create.py …` — no `.env` required, just `gh auth login` once. Works for issues and PRs (though PR creation still requires normal git workflow + `gh pr create`, not this toolkit).
+- Cross-repo usage: any consumer repo can file bugs against a producer with `GITHUB_REPO=owner/repo uv run tools/gh-create.py …` — no `.env` required, just `gh auth login` once. Works for issues and PRs (though PR creation still requires normal git workflow + `gh pr create`, not this toolkit).
 
 ## Knowledge Index
 
@@ -136,9 +136,9 @@ Topic-specific knowledge files in `knowledge/`. The LLM loads these on demand pe
 
 | Topic | File | When to load |
 |---|---|---|
-| Sprint plan / milestone status | `knowledge/agile_sprint.md` | When planning or closing sprint work, checking what's next, or updating sprint state after an issue closes |
-| Mission, triage philosophy, milestone framework | `knowledge/gh_issues_agent_mission.md` | When triaging new issues by priority/milestone, classifying scope (trust bug vs authoring vs agent capability), or explaining the why behind toolkit decisions |
-| GitHub Issues API reference | `knowledge/github_issues_reference.md` | When touching GitHub API call shapes — endpoints, headers, pagination, issue/comment field names, rate limits |
+| Sprint plan / milestone status | `knowledge/agile-sprint.md` | When planning or closing sprint work, checking what's next, or updating sprint state after an issue closes |
+| Mission, triage philosophy, milestone framework | `knowledge/gh-issues-agent-mission.md` | When triaging new issues by priority/milestone, classifying scope (trust bug vs authoring vs agent capability), or explaining the why behind toolkit decisions |
+| GitHub Issues API reference | `knowledge/github-issues-reference.md` | When touching GitHub API call shapes — endpoints, headers, pagination, issue/comment field names, rate limits |
 
 ## External System Lessons
 
@@ -146,26 +146,26 @@ Topic-specific knowledge files in `knowledge/`. The LLM loads these on demand pe
 
 **Behavior**: The `/repos/{owner}/{repo}/issues` endpoint returns *both* issues and pull requests. PRs include a `pull_request` key; issues don't.
 **Why it matters**: As of v2.0 (2026-06-30), this toolkit handles BOTH issues and PRs. The `pull_request` key is used to distinguish them, not filter them out.
-**How to handle**: `gh_sync.py` now pulls both. Items with `pull_request` key are rendered as `pr-NNNN-*.md` files with additional PR metadata (head/base branch, mergeable status, draft flag). For full PR details, the tool fetches `/repos/{owner}/{repo}/pulls/{number}` separately.
+**How to handle**: `gh-sync.py` now pulls both. Items with `pull_request` key are rendered as `pr-NNNN-*.md` files with additional PR metadata (head/base branch, mergeable status, draft flag). For full PR details, the tool fetches `/repos/{owner}/{repo}/pulls/{number}` separately.
 
 **Behavior**: GitHub auto-closes issues when commits/PRs containing `Closes #N`, `Fixes #N`, or `Resolves #N` land on the default branch.
-**Why it matters**: A locally-closed issue (via `gh_close.py`) plus a `Closes #N` commit produces a single clean close, not a double-close.
-**How to handle**: Use `gh_close.py` for explicit, audited closes with a comment. Use the `Closes #N` syntax in commits for the auto-close path.
+**Why it matters**: A locally-closed issue (via `gh-close.py`) plus a `Closes #N` commit produces a single clean close, not a double-close.
+**How to handle**: Use `gh-close.py` for explicit, audited closes with a comment. Use the `Closes #N` syntax in commits for the auto-close path.
 
 **Behavior**: Personal Access Tokens (classic) need `public_repo` scope minimum to comment + close issues on a public repo.
-**Why it matters**: 401/403 errors from `gh_sync.py` or `gh_close.py` almost always trace to token scope or expiry, not the code.
+**Why it matters**: 401/403 errors from `gh-sync.py` or `gh-close.py` almost always trace to token scope or expiry, not the code.
 **How to handle**: When auth errors appear, regenerate the token with `public_repo` before debugging anything else.
 
 ## Existing Tooling
 
 | Tool | Purpose | When to use |
 |---|---|---|
-| `tools/gh_sync.py` | Pulls open issues AND PRs + comments into `.github_issues/open/` (issues as `issue-NNNN-*.md`, PRs as `pr-NNNN-*.md`); archives closed ones into `closed/`. | Start of every session, and after closing an issue or merging a PR. |
-| `tools/gh_create.py --title "..." [--body / --body-file ...] [--label ...]` | Creates a new issue on GitHub and drops its markdown mirror into `.github_issues/open/`. Validates labels against the repo taxonomy. | When filing a bug or enhancement — including against another repo via `GITHUB_REPO=owner/repo`, the canonical cross-repo case where an agent discovers a defect in a producer repo while working in a consumer. |
-| `tools/gh_close.py --number N --comment "..." [--merge]` | Posts comment, closes issue/PR on GitHub, moves local file to `closed/`. For PRs: `--merge` flag squash-merges instead of just closing. | Always — never close issues/PRs via GitHub UI when working from this repo (audit trail lives in the comment). Use `--merge` for PRs you've reviewed and want to land. |
+| `tools/gh-sync.py` | Pulls open issues AND PRs + comments into `.github-issues/open/` (issues as `issue-NNNN-*.md`, PRs as `pr-NNNN-*.md`); archives closed ones into `closed/`. | Start of every session, and after closing an issue or merging a PR. |
+| `tools/gh-create.py --title "..." [--body / --body-file ...] [--label ...]` | Creates a new issue on GitHub and drops its markdown mirror into `.github-issues/open/`. Validates labels against the repo taxonomy. | When filing a bug or enhancement — including against another repo via `GITHUB_REPO=owner/repo`, the canonical cross-repo case where an agent discovers a defect in a producer repo while working in a consumer. |
+| `tools/gh-close.py --number N --comment "..." [--merge]` | Posts comment, closes issue/PR on GitHub, moves local file to `closed/`. For PRs: `--merge` flag squash-merges instead of just closing. | Always — never close issues/PRs via GitHub UI when working from this repo (audit trail lives in the comment). Use `--merge` for PRs you've reviewed and want to land. |
 
 **Auth:** all three tools first check the `GH_TOKEN` env var, then fall back to `gh auth token` (SSH-based). Run `gh auth login` once and the toolkit works with no `.env` or manual export. An explicit `GH_TOKEN=...` still wins if set, but SSH auth via `gh` CLI is the canonical pattern.
 
-**Note:** The `--issue` flag in `gh_close.py` is deprecated (use `--number` instead, which works for both issues and PRs).
+**Note:** The `--issue` flag in `gh-close.py` is deprecated (use `--number` instead, which works for both issues and PRs).
 
 Reuse these before writing new GitHub-API code. If you need a new operation (e.g. label changes, milestone assignment), add it as a sibling script in `tools/` matching the existing pattern.
